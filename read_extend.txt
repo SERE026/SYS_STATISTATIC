@@ -2,7 +2,7 @@
     var _hmt = _hmt || [];
     (function() {
         var hm = document.createElement("script");
-        hm.src = "//test.tongji.yinchengmall.com/resources/ycm-hm.js?test2112833f50aaf81039a5c2123081274e";
+        hm.src = "//test.tongji.yinchengmall.com/resources/ycm-hm.js?ycm2112833f50aaf81039a5c2123081274e";
         var s = document.getElementsByTagName("script")[0];
         s.parentNode.insertBefore(hm, s);
     })();

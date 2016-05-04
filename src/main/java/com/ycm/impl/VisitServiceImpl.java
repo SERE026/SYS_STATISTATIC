@@ -98,32 +98,34 @@ public class VisitServiceImpl implements VisitService{
 			Date date = new Date();
 			Integer ss = DateUtil.parseStrToInt(DateUtil.addDay(date, -1));
 			Integer score = DateUtil.parseStrToInt(date);
+			
+			String tag = DateUtil.formatDateToString(date, "yyyyMMdd");
 
 			// PV 通过此统计 不允许重复
 			redisService.zadd(key, score, GsonUtil.toJson(page));
 			redisService.zadd(RedisKeyUtils.getPVKey(), score, page.getUrl()
-					+ ":" + id);
+					+ Constant.SEPERATOR + id);
 
 			//UV
 			if (StringUtils.isNotBlank(page.getTjUid())) {
 				// UV（访客数） 通过score 来区别
 				Object tjUid = SessionManager.getAttribute(page.getTjUid());
 				
+				//每个页面的UV
+				redisService.zadd(RedisKeyUtils.getUVByUrl(page.getUrl()), score,
+						page.getTjUid() + Constant.SEPERATOR + tag);
+				
 				if(tjUid == null){
-					
+					//存储 给定一个30分钟过期
 					SessionManager.setAttribute(page.getTjUid(), page.getTjUid());
 					
 					redisService.zadd(RedisKeyUtils.getUVKey(), score,
-							page.getTjUid() + ":" + id);
+							page.getTjUid() + Constant.SEPERATOR + id);
 					
 					// NUV （新访客数：一天当中剔除重复访问的）
 					String newKey = RedisKeyUtils.getNewUVKey();
 					// 查询当天是否已经存在
-					Set<String> set = redisService.zrangeByScore(newKey, ss, score);
-					if (!(set != null && set.size() > 0)) {
-						redisService
-								.zadd(newKey, score, page.getTjUid() + ":" + id);
-					}
+					redisService.zadd(newKey, score, page.getTjUid() + Constant.SEPERATOR + tag);
 				}
 				// redisService.hset(RedisKeyUtils.getNewUVKey(),
 				// page.getTjUid(), page.getTjUid());
@@ -132,10 +134,10 @@ public class VisitServiceImpl implements VisitService{
 			// IP数 使用 SortSet 通过score 来查询
 			if (StringUtils.isNotBlank(page.getIp())) {
 				String newKey = RedisKeyUtils.getIPKey();
-				Set<String> set = redisService.zrangeByScore(newKey, ss, score);
-				if (!(set != null && set.size() > 0)) { // IP已经存在，不再存储
-					redisService.zadd(newKey, score, page.getIp() + ":" + id);
-				}
+				
+				redisService.zadd(newKey, score, page.getIp() + Constant.SEPERATOR + tag);
+				//每个页面的IP数
+				redisService.zadd(RedisKeyUtils.getIPByUrl(page.getUrl()), score, page.getIp() + Constant.SEPERATOR + tag);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

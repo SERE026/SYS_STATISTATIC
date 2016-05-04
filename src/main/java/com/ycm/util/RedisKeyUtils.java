@@ -37,6 +37,9 @@ public class RedisKeyUtils {
 		return "UV:N:"+token;
 	}
 
+	public static String getUVByUrl(String url){
+		return "UV:URL:"+url;
+	}
 	
 	public static String getUVKey(String itemId){
 		return "UV:"+DateUtil.formatDateToString(new Date(), "yyyyMMddHHmmss");
@@ -45,5 +48,9 @@ public class RedisKeyUtils {
 	public static String getIPKey() {
 		return "IP:";
 	}
+	public static String getIPByUrl(String url) {
+		return "IP:URL:"+url;
+	}
+	
 
 }

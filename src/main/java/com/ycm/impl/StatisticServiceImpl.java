@@ -187,26 +187,28 @@ public class StatisticServiceImpl implements StatisticService{
 				return pageResult;
 			}
 
-			Set<String> pages = redisService.zrange(key, 0, -1);
+			Set<String> pages = redisService.zrange(key, offset*limit, (offset+1)*limit);
 			if (pages == null || pages.isEmpty()) {
 				return pageResult;
 			}
 
 			List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 
-			for (String p : pages) {
+			for (String pg : pages) {
 				Map<String, Object> data = new HashMap<String, Object>();
-				data.put("pageUrl", p);
+				data.put("pageUrl", pg);
+				
+				String p = pg.split(Constant.SEPERATOR)[0];
 
-				Long count = redisService.zcount(RedisKeyUtils.getUVKey(),
+				Long count = redisService.zcount(RedisKeyUtils.getUVByUrl(p),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_UV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getPVKey(),
+				count = redisService.zcount(RedisKeyUtils.getPVKey(p),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_PV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getIPKey(),
+				count = redisService.zcount(RedisKeyUtils.getIPByUrl(p),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_IP, count.intValue());
 

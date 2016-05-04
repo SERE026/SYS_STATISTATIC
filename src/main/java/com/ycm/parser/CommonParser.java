@@ -228,7 +228,7 @@ public abstract class CommonParser {
 	}
 	
 	public static String trim(String value){
-		if(StringUtils.isBlank(value)){
+		if(StringUtils.isBlank(value) || "undefined".equals(value)){
 			return "-1";
 		}
 		return value;

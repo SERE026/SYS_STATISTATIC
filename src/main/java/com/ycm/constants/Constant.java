@@ -102,4 +102,6 @@ public class Constant {
 	public static final Integer IS_NEW_VISIT_YES = 1;
 	
 	public static final String REDIS_SERVICE = "1".equals(Global.getConfig("isCluster")) ? "RedisClusterService" : "RedisOneService";
+	
+	public static final String SEPERATOR = "####";
 }

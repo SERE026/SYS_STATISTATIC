@@ -427,9 +427,9 @@ this.statistics = this.statistics||{};
         window.name=window.name+'|%'+urlRequest.formatData({
                 tj_tel:domTime,
                 tj_tll:+new Date(),
-                tj_tt:document.title,
-                tj_url:location.href,
-                referrer:document.referrer
+                tj_tt:encodeURIComponent(document.title),
+                tj_url:encodeURIComponent(location.href),
+                referrer:encodeURIComponent(document.referrer)
             });
 
     }
