@@ -32,6 +32,7 @@ import com.ycm.util.DateUtil;
 import com.ycm.util.GsonUtil;
 import com.ycm.util.RedisKeyUtils;
 import com.ycm.util.SpringContextHolder;
+import com.ycm.web.session.manager.SessionManager;
 
 @Service
 public class VisitServiceImpl implements VisitService{
@@ -103,17 +104,26 @@ public class VisitServiceImpl implements VisitService{
 			redisService.zadd(RedisKeyUtils.getPVKey(), score, page.getUrl()
 					+ ":" + id);
 
-			// UV（访客数） 通过score 来区别
+			//UV
 			if (StringUtils.isNotBlank(page.getTjUid())) {
-				redisService.zadd(RedisKeyUtils.getUVKey(), score,
-						page.getTjUid() + ":" + id);
-				// NUV （新访客数：一天当中剔除重复访问的）
-				String newKey = RedisKeyUtils.getNewUVKey();
-				// 查询当天是否已经存在
-				Set<String> set = redisService.zrangeByScore(newKey, ss, score);
-				if (!(set != null && set.size() > 0)) {
-					redisService
-							.zadd(newKey, score, page.getTjUid() + ":" + id);
+				// UV（访客数） 通过score 来区别
+				Object tjUid = SessionManager.getAttribute(page.getTjUid());
+				
+				if(tjUid == null){
+					
+					SessionManager.setAttribute(page.getTjUid(), page.getTjUid());
+					
+					redisService.zadd(RedisKeyUtils.getUVKey(), score,
+							page.getTjUid() + ":" + id);
+					
+					// NUV （新访客数：一天当中剔除重复访问的）
+					String newKey = RedisKeyUtils.getNewUVKey();
+					// 查询当天是否已经存在
+					Set<String> set = redisService.zrangeByScore(newKey, ss, score);
+					if (!(set != null && set.size() > 0)) {
+						redisService
+								.zadd(newKey, score, page.getTjUid() + ":" + id);
+					}
 				}
 				// redisService.hset(RedisKeyUtils.getNewUVKey(),
 				// page.getTjUid(), page.getTjUid());

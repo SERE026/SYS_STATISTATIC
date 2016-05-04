@@ -7,6 +7,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpSession;
 
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+
+import com.ycm.util.GsonUtil;
+import com.ycm.util.SpringContextHolder;
+
 public class SessionManager {
 	
 	public static volatile Map<String,AppSession> sessionMap = new ConcurrentHashMap<String,AppSession>();
@@ -25,20 +31,37 @@ public class SessionManager {
 		}else{
 			session.setMaxInactiveInterval(15*60L);
 		}
-		sessionMap.put(key, session);
+		
+		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
+		Jedis jedis = jedisPool.getResource();
+		jedis.set(key, GsonUtil.toJson(session));
+		jedis.expire(key, 30*60);
+		jedis.close();
+		//sessionMap.put(key, session);
 	}
 	
 	public static void removeAttribute(String key){
-		sessionMap.remove(key);
+		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
+		Jedis jedis = jedisPool.getResource();
+		jedis.del(key);
+		jedis.close();
+		//sessionMap.remove(key);
 	}
 	
 	public static Object getAttribute(String key){
 		if(key==null || "".equals(key)) return null;
-		AppSession session = sessionMap.get(key);
+		
+		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
+		Jedis jedis = jedisPool.getResource();
+		
+		AppSession session = GsonUtil.parse2Object(jedis.get(key));
+				//sessionMap.get(key);
 		if(session!=null) {
 			session.setLastAccessedTime(new Date());
-			sessionMap.put(key, session);
-			return sessionMap.get(key).getValue();
+			//sessionMap.put(key, session);
+			//TODO 只要有访问，就认为是同一个用户
+			jedis.expire(key, 30*60);
+			return session.getValue();
 		}
 		else return null;
 	}
