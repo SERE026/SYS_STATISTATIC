@@ -46,6 +46,8 @@ public class VisitServiceImpl implements VisitService{
 //	@Autowired
 //    private JedisCluster redisService;
 	
+	private JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
+	
 	@Override
 	public void saveVisit(VisitInfo visit) {
 		//TODO 
@@ -86,17 +88,19 @@ public class VisitServiceImpl implements VisitService{
 	
 	@Override
 	public void savePageVisit(PageVisitInfo page) {
-		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
 		Jedis redisService = jedisPool.getResource();
 		try{
 			Long id = redisService.incr("p");
-			String key = RedisKeyUtils.getPVKey(page.getUrl());
+			
+			String p = page.getUrl().split("\\?")[0];
+			
+			String key = RedisKeyUtils.getPVKey(p);
 			page.setId(id);
 			LOG.info("访问页面 KEY值：{} ---- 页面访问信息：{} ", key,
 					ToStringBuilder.reflectionToString(page));
 
 			Date date = new Date();
-			Integer ss = DateUtil.parseStrToInt(DateUtil.addDay(date, -1));
+			
 			Integer score = DateUtil.parseStrToInt(date);
 			
 			String tag = DateUtil.formatDateToString(date, "yyyyMMdd");
@@ -112,7 +116,7 @@ public class VisitServiceImpl implements VisitService{
 				Object tjUid = SessionManager.getAttribute(page.getTjUid());
 				
 				//每个页面的UV
-				redisService.zadd(RedisKeyUtils.getUVByUrl(page.getUrl()), score,
+				redisService.zadd(RedisKeyUtils.getUVByUrl(p), score,
 						page.getTjUid() + Constant.SEPERATOR + tag);
 				
 				if(tjUid == null){
@@ -137,12 +141,13 @@ public class VisitServiceImpl implements VisitService{
 				
 				redisService.zadd(newKey, score, page.getIp() + Constant.SEPERATOR + tag);
 				//每个页面的IP数
-				redisService.zadd(RedisKeyUtils.getIPByUrl(page.getUrl()), score, page.getIp() + Constant.SEPERATOR + tag);
+				redisService.zadd(RedisKeyUtils.getIPByUrl(p), score, page.getIp() + Constant.SEPERATOR + tag);
 			}
 		} catch (Exception e) {
+			close(redisService);
 			e.printStackTrace();
 		} finally {
-			redisService.close();
+			close(redisService);
 		}
 	}
 
@@ -188,6 +193,12 @@ public class VisitServiceImpl implements VisitService{
 	}
 
 
-	
+	private void close(Jedis jedis){
+		jedis.close();
+        LOG.debug(" Is Jedis connected " +jedis.isConnected());
+        if(jedis.isConnected())
+            jedis.disconnect();
+        LOG.debug(" After disconnecting: is redis connected  " +jedis.isConnected());
+	}
 	
 }

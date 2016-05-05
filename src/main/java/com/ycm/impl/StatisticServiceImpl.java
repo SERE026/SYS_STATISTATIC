@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import redis.clients.jedis.Jedis;
@@ -24,15 +25,17 @@ import com.ycm.util.SpringContextHolder;
 @Service
 public class StatisticServiceImpl implements StatisticService{
 	
-
+	private static Logger LOG = LoggerFactory.getLogger(StatisticServiceImpl.class);
+	
 //	@Autowired
 //	@Qualifier("RedisOneService")
 //	private RedisService redisService;
 	
+	private JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
 	
 	@Override
 	public Map<String, Integer> visitRangeStat(Integer startTime, Integer endTime) {
-		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
+		
 		Jedis redisService = jedisPool.getResource();
 		try{
 			Map<String, Integer> data = new HashMap<String, Integer>();
@@ -51,9 +54,11 @@ public class StatisticServiceImpl implements StatisticService{
 			return data;
 		}catch(Exception e){
 			e.printStackTrace();
+			
+			close(redisService);
 			return null;
 		}finally{
-			redisService.close();
+			close(redisService);
 		}
 	}
 	
@@ -65,7 +70,6 @@ public class StatisticServiceImpl implements StatisticService{
 	 */
 	@Override
 	public List<Map<String, Object>> visitRangeStat(List<Map<String, Integer>> timeRanges,  int spiltType) {
-		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
 		Jedis redisService = jedisPool.getResource();
 		try {
 			List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
@@ -99,13 +103,14 @@ public class StatisticServiceImpl implements StatisticService{
 
 				result.add(data);
 			}
-
+			
 			return result;
 		} catch (Exception e) {
 			e.printStackTrace();
+			close(redisService);
 			return null;
 		} finally {
-			redisService.close();
+			close(redisService);
 		}
 	}
 	
@@ -172,7 +177,6 @@ public class StatisticServiceImpl implements StatisticService{
 	@Override
 	public Page<Map<String, Object>> pageStat(Integer startTime, 
 			Integer endTime, Integer offset, Integer limit) {
-		JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
 		Jedis redisService = jedisPool.getResource();
 		try {
 
@@ -187,7 +191,7 @@ public class StatisticServiceImpl implements StatisticService{
 				return pageResult;
 			}
 
-			Set<String> pages = redisService.zrange(key, offset*limit, (offset+1)*limit);
+			Set<String> pages = redisService.zrange(key, offset, (offset+limit));
 			if (pages == null || pages.isEmpty()) {
 				return pageResult;
 			}
@@ -198,7 +202,7 @@ public class StatisticServiceImpl implements StatisticService{
 				Map<String, Object> data = new HashMap<String, Object>();
 				data.put("pageUrl", pg);
 				
-				String p = pg.split(Constant.SEPERATOR)[0];
+				String p = pg.split("\\?")[0];
 
 				Long count = redisService.zcount(RedisKeyUtils.getUVByUrl(p),
 						startTime, endTime);
@@ -218,9 +222,10 @@ public class StatisticServiceImpl implements StatisticService{
 			return pageResult;
 		} catch (Exception e) {
 			e.printStackTrace();
+			close(redisService);
 			return null;
 		} finally {
-			redisService.close();
+			close(redisService);
 		}
 	}
 	
@@ -357,4 +362,12 @@ public class StatisticServiceImpl implements StatisticService{
 		return null;
 	}
 	
+	
+	private void close(Jedis jedis){
+		jedis.close();
+        LOG.debug(" Is Jedis connected " +jedis.isConnected());
+        if(jedis.isConnected())
+            jedis.disconnect();
+        LOG.debug(" After disconnecting: is redis connected  " +jedis.isConnected());
+	}
 }

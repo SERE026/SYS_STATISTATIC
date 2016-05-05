@@ -88,7 +88,7 @@ public class SessionManager {
 	}
 	
 	public static void main(String[] args) {
-		String json = "{\"id\":\"08736427-de8f-4171-94d1-105bf006e806\","
+		/*String json = "{\"id\":\"08736427-de8f-4171-94d1-105bf006e806\","
 				+ "\"key\":\"2D4412DD-1790-42A5-8908-88C585612374\","
 				+ "\"value\":\"2D4412DD-1790-42A5-8908-88C585612374\",\"creationTime\":\"May 4, 2016 6:01:27 PM\""
 				+ ",\"lastAccessedTime\":\"May 4, 2016 6:01:27 PM\",\"maxInactiveInterval\":900}";
@@ -98,6 +98,9 @@ public class SessionManager {
 
 	    AppSession session = gson.fromJson(json, AppSession.class);
 	    
-	    LOG.info("Session:{}",ToStringBuilder.reflectionToString(session));
+	    LOG.info("Session:{}",ToStringBuilder.reflectionToString(session));*/
+	    
+	    String str = "http://test.yinchengmall.com/#/billsFinancing?_k=qc3d49";
+	    System.out.println(str.split("\\?")[0]);
 	}
 }

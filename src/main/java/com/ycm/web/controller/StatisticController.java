@@ -52,9 +52,9 @@ public class StatisticController {
 		Date date = new Date();
 		
 		Integer endTime =  DateUtil.parseStrToInt(date);
-		Integer startTime = endTime -30 ; //TODO
+		//Integer startTime = endTime -30 ; //TODO
 		
-		Map<String, Integer> currStat = statisticService.visitRangeStat(startTime,endTime);
+		Map<String, Integer> currStat = statisticService.visitRangeStat(0,endTime);
 		model.addAttribute("currStat", currStat);
 		return "statistic/page_stat_index";
 	}
@@ -186,7 +186,7 @@ public class StatisticController {
 		//统计的时间范围,格式：yyyy/MM/dd-yyyy/MM/dd
 		String timeRange = request.getParameter("timeRange");
 		Map<String, Object> result = new HashMap<String, Object>();
-		if(StringUtils.isEmpty(timeRange)) {
+		/*if(StringUtils.isEmpty(timeRange)) {
 			result.put("state", false);
 			result.put("msg", "确实必要参数");
 			return GsonUtil.toJson(result);
@@ -195,7 +195,10 @@ public class StatisticController {
 		//TODO 
 		int startTime = DateUtil.parseStrToInt(DateUtil.formatStrToDate(times[0].trim() + " 00:00:00", "MM/dd/yyyy hh:mm:ss"));
 		int endTime = DateUtil.parseStrToInt(DateUtil.formatStrToDate(times[1].trim()+ " 23:59:59", "MM/dd/yyyy hh:mm:ss"));
-		Page<Map<String, Object>> data = statisticService.pageStat(startTime, 
+		*/
+		Integer endTime = DateUtil.parseStrToInt(new Date());
+		
+		Page<Map<String, Object>> data = statisticService.pageStat(0, 
 				endTime, offset, limit);
 		
 		PageResult<Map<String, Object>> pr = new PageResult<Map<String,Object>>();
