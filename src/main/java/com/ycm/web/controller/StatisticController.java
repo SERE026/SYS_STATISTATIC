@@ -42,7 +42,7 @@ public class StatisticController {
 	
 	
 	/**
-	 * 统计展示首页 最近30分钟的统计
+	 * 统计展示首页 
 	 * @return
 	 */
 	@RequestMapping(value="/pageStatIndex")
