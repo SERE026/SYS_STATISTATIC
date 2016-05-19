@@ -2,8 +2,7 @@
 <%@ include file="/WEB-INF/views/common/taglib.jsp"%>
 <%
 String path = request.getContextPath();
-String basePath = "http://"+request.getServerName()+":"+request.getServerPort()+path+"/";
-//String basePath = "https://"+request.getServerName()+path+"/";
+String basePath = "https://"+request.getServerName()+path+"/";
 %>
 <!DOCTYPE html>
 <html>
@@ -119,7 +118,7 @@ String basePath = "http://"+request.getServerName()+":"+request.getServerPort()+
 	function ok() {
 		var timeRange = $("#timeRange").val();
 		//alert(timeRange);
-		 var url = "<%=basePath%>stat/pageStat?timeRange="+timeRange;
+		 var url = "/stat/pageStat?timeRange="+timeRange;
 	
 		 $('#table1').bootstrapTable('refresh', {
 	         url: url
@@ -176,7 +175,7 @@ String basePath = "http://"+request.getServerName()+":"+request.getServerPort()+
 	$("#timeRange").val(moment().format('MM/DD/YYYY') + " - " + moment().format('MM/DD/YYYY'));
 	
 	var timeRange = $("#timeRange").val();
-	 var url = "<%=basePath%>stat/pageStat?timeRange="+timeRange;
+	 var url = "/stat/pageStat?timeRange="+timeRange;
 	$('#table1').bootstrapTable({
 	    method: 'get',
 	    url: url,

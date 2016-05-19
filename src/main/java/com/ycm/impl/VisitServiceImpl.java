@@ -1,33 +1,24 @@
 package com.ycm.impl;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 
-import com.ycm.api.RedisService;
 import com.ycm.api.VisitService;
-import com.ycm.config.Global;
 import com.ycm.constants.Constant;
 import com.ycm.dto.EventInfo;
 import com.ycm.dto.Log;
 import com.ycm.dto.PageLoadTime;
 import com.ycm.dto.PageVisitInfo;
 import com.ycm.dto.VisitInfo;
-import com.ycm.util.ConvertUtils;
 import com.ycm.util.DateUtil;
 import com.ycm.util.GsonUtil;
 import com.ycm.util.RedisKeyUtils;
@@ -39,14 +30,11 @@ public class VisitServiceImpl implements VisitService{
 	
 	private static Logger LOG = LoggerFactory.getLogger(VisitServiceImpl.class);
 	
-	/*@Autowired
-	@Qualifier("RedisOneService")
-	private RedisService redisService;*/
+	@Autowired
+	private RedisSingleService redisService;
 	
 //	@Autowired
 //    private JedisCluster redisService;
-	
-	private JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
 	
 	@Override
 	public void saveVisit(VisitInfo visit) {
@@ -88,9 +76,10 @@ public class VisitServiceImpl implements VisitService{
 	
 	@Override
 	public void savePageVisit(PageVisitInfo page) {
-		Jedis redisService = jedisPool.getResource();
+		Jedis jedis = null;
 		try{
-			Long id = redisService.incr("p");
+			jedis = redisService.getJedis();
+			Long id = jedis.incr("p");
 			
 			String p = page.getUrl().split("\\?")[0];
 			
@@ -106,9 +95,17 @@ public class VisitServiceImpl implements VisitService{
 			String tag = DateUtil.formatDateToString(date, "yyyyMMdd");
 
 			// PV 通过此统计 不允许重复
-			redisService.zadd(key, score, GsonUtil.toJson(page));
-			redisService.zadd(RedisKeyUtils.getPVKey(), score, page.getUrl()
+			jedis.zadd(key, score, GsonUtil.toJson(page));    //LOG 全纪录
+			
+			//PV总记录
+			jedis.zadd(RedisKeyUtils.getPVKey(), score, page.getUrl()
 					+ Constant.SEPERATOR + id);
+			
+			//TODO 渠道来源统计
+			if(StringUtils.isNotBlank(page.getReferer())){
+				jedis.zadd(RedisKeyUtils.getPVKey(page.getReferer()), score, page.getUrl()
+						+ Constant.SEPERATOR + id);
+			}
 
 			//UV
 			if (StringUtils.isNotBlank(page.getTjUid())) {
@@ -116,20 +113,20 @@ public class VisitServiceImpl implements VisitService{
 				Object tjUid = SessionManager.getAttribute(page.getTjUid());
 				
 				//每个页面的UV
-				redisService.zadd(RedisKeyUtils.getUVByUrl(p), score,
+				jedis.zadd(RedisKeyUtils.getUVByUrl(p), score,
 						page.getTjUid() + Constant.SEPERATOR + tag);
 				
 				if(tjUid == null){
 					//存储 给定一个30分钟过期
 					SessionManager.setAttribute(page.getTjUid(), page.getTjUid());
 					
-					redisService.zadd(RedisKeyUtils.getUVKey(), score,
+					jedis.zadd(RedisKeyUtils.getUVKey(), score,
 							page.getTjUid() + Constant.SEPERATOR + id);
 					
 					// NUV （新访客数：一天当中剔除重复访问的）
 					String newKey = RedisKeyUtils.getNewUVKey();
 					// 查询当天是否已经存在
-					redisService.zadd(newKey, score, page.getTjUid() + Constant.SEPERATOR + tag);
+					jedis.zadd(newKey, score, page.getTjUid() + Constant.SEPERATOR + tag);
 				}
 				// redisService.hset(RedisKeyUtils.getNewUVKey(),
 				// page.getTjUid(), page.getTjUid());
@@ -139,15 +136,15 @@ public class VisitServiceImpl implements VisitService{
 			if (StringUtils.isNotBlank(page.getIp())) {
 				String newKey = RedisKeyUtils.getIPKey();
 				
-				redisService.zadd(newKey, score, page.getIp() + Constant.SEPERATOR + tag);
+				jedis.zadd(newKey, score, page.getIp() + Constant.SEPERATOR + tag);
 				//每个页面的IP数
-				redisService.zadd(RedisKeyUtils.getIPByUrl(p), score, page.getIp() + Constant.SEPERATOR + tag);
+				jedis.zadd(RedisKeyUtils.getIPByUrl(p), score, page.getIp() + Constant.SEPERATOR + tag);
 			}
 		} catch (Exception e) {
-			close(redisService);
+			redisService.close(jedis,true);
 			e.printStackTrace();
 		} finally {
-			close(redisService);
+			redisService.close(jedis,false);
 		}
 	}
 
@@ -193,12 +190,14 @@ public class VisitServiceImpl implements VisitService{
 	}
 
 
-	private void close(Jedis jedis){
-		jedis.close();
+	private void close(Jedis jedis,boolean f){
+       /* if(jedis!=null)
+        	jedis.close();
+        
         LOG.debug(" Is Jedis connected " +jedis.isConnected());
-        if(jedis.isConnected())
+        if(jedis!=null && jedis.isConnected())
             jedis.disconnect();
-        LOG.debug(" After disconnecting: is redis connected  " +jedis.isConnected());
+        LOG.debug(" After disconnecting: is redis connected  " +jedis.isConnected());*/
 	}
 	
 }

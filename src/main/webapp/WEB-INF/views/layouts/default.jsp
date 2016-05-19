@@ -3,9 +3,9 @@
 <%@taglib prefix="decorator" uri="http://www.opensymphony.com/sitemesh/decorator" %>
 <%
    //设置无缓存
-   //response.setHeader("pragma","no-cache");  
-   //response.setHeader("Cache-Control","no-cache");  
-   //response.setDateHeader("Expires",0);
+   response.setHeader("pragma","no-cache");  
+   response.setHeader("Cache-Control","no-cache");  
+   response.setDateHeader("Expires",0);
    %>
 <!doctype html>
 <html>

@@ -25,8 +25,9 @@ public class JedisSingleTest {
 		try {
 			jedis = pool.getResource();
 
-			jedis.set("name", "lisi");
-			String name = jedis.get("name");
+//			jedis.set("name", "lisi");
+//			String name = jedis.get("name");
+			String name = jedis.get("BF099DA3-9815-4CE0-A2DC-AA6E765BE0A6");
 			System.out.println(name);
 			// jedis.set("foo", "bar");
 			// String foobar = jedis.get("foo");

@@ -17,8 +17,8 @@ public class RedisKeyUtils {
 		return "PV:" ;
 	}
     
-	public static String getPVKey(String url) {
-		return "PV:" + url ;
+	public static String getPVKey(String item) {
+		return "PV:" + item ;
 	}
 
 	public static String getEventKey() {

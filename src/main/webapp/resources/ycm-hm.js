@@ -399,13 +399,13 @@ this.statistics = this.statistics||{};
             window.name=orginName;
             //发送打点请求
             urlRequest.load({
-                url:'http://test.tongji.yinchengmall.com/visit/send.do',
+                url:'https://tongji.yinchengmall.com/visit/send.do',
                 data:{
                     tj_uid:getUid(),
                     tj_et:'3',
-                    tj_tt:getLog(windowUrl,"tj_tt"),
-                    tj_url:getLog(windowUrl,"tj_url"),
-                    referrer:getLog(windowUrl,"referrer"),
+                    tj_tt:encodeURIComponent(getLog(windowUrl,"tj_tt")),
+                    tj_url:encodeURIComponent(getLog(windowUrl,"tj_url")),
+                    referrer:encodeURIComponent(getLog(windowUrl,"referrer")),
                     tj_tel:getLog(windowUrl,"tj_tel"),
                     tj_tll:getLog(windowUrl,"tj_tll"),
                     tj_sr:utils.screenSize,

@@ -10,55 +10,51 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
 import com.ycm.api.StatisticService;
 import com.ycm.constants.Constant;
 import com.ycm.persitence.Page;
 import com.ycm.util.DateUtil;
 import com.ycm.util.RedisKeyUtils;
-import com.ycm.util.SpringContextHolder;
 
 @Service
 public class StatisticServiceImpl implements StatisticService{
 	
 	private static Logger LOG = LoggerFactory.getLogger(StatisticServiceImpl.class);
 	
-//	@Autowired
-//	@Qualifier("RedisOneService")
-//	private RedisService redisService;
-	
-	private JedisPool jedisPool = SpringContextHolder.getBean("jedisPool");
+	@Autowired
+	private RedisSingleService redisService;
 	
 	@Override
 	public Map<String, Integer> visitRangeStat(Integer startTime, Integer endTime) {
 		
-		Jedis redisService = jedisPool.getResource();
+		Jedis jedis = redisService.getJedis();
 		try{
 			Map<String, Integer> data = new HashMap<String, Integer>();
-			Long count = redisService.zcount(RedisKeyUtils.getUVKey(), startTime, endTime);
+			Long count = jedis.zcount(RedisKeyUtils.getUVKey(), startTime, endTime);
 			data.put(Constant.STAT_POINT_UV, count.intValue());
 			
-			count = redisService.zcount(RedisKeyUtils.getPVKey(), startTime, endTime);
+			count = jedis.zcount(RedisKeyUtils.getPVKey(), startTime, endTime);
 			data.put(Constant.STAT_POINT_PV, count.intValue());
 			
-			count = redisService.zcount(RedisKeyUtils.getNewUVKey(),startTime,endTime);
+			count = jedis.zcount(RedisKeyUtils.getNewUVKey(),startTime,endTime);
 			data.put(Constant.STAT_POINT_NEW_UV, count.intValue());
 			
-			count = redisService.zcount(RedisKeyUtils.getIPKey(),startTime,endTime);
+			count = jedis.zcount(RedisKeyUtils.getIPKey(),startTime,endTime);
 			data.put(Constant.STAT_POINT_IP, count.intValue());
 				
 			return data;
 		}catch(Exception e){
 			e.printStackTrace();
 			
-			close(redisService);
+			redisService.close(jedis,true);
 			return null;
 		}finally{
-			close(redisService);
+			redisService.close(jedis,false);
 		}
 	}
 	
@@ -70,7 +66,7 @@ public class StatisticServiceImpl implements StatisticService{
 	 */
 	@Override
 	public List<Map<String, Object>> visitRangeStat(List<Map<String, Integer>> timeRanges,  int spiltType) {
-		Jedis redisService = jedisPool.getResource();
+		Jedis jedis = redisService.getJedis();
 		try {
 			List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 			for (Map<String, Integer> m : timeRanges) {
@@ -85,19 +81,19 @@ public class StatisticServiceImpl implements StatisticService{
 				Map<String, Object> data = new HashMap<String, Object>();
 				data.put("timeText", getTimeText(ST, spiltType));
 
-				Long count = redisService.zcount(RedisKeyUtils.getUVKey(),
+				Long count = jedis.zcount(RedisKeyUtils.getUVKey(),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_UV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getPVKey(),
+				count = jedis.zcount(RedisKeyUtils.getPVKey(),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_PV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getNewUVKey(),
+				count = jedis.zcount(RedisKeyUtils.getNewUVKey(),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_NEW_UV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getIPKey(),
+				count = jedis.zcount(RedisKeyUtils.getIPKey(),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_IP, count.intValue());
 
@@ -107,10 +103,10 @@ public class StatisticServiceImpl implements StatisticService{
 			return result;
 		} catch (Exception e) {
 			e.printStackTrace();
-			close(redisService);
+			redisService.close(jedis,true);
 			return null;
 		} finally {
-			close(redisService);
+			redisService.close(jedis,false);
 		}
 	}
 	
@@ -177,21 +173,21 @@ public class StatisticServiceImpl implements StatisticService{
 	@Override
 	public Page<Map<String, Object>> pageStat(Integer startTime, 
 			Integer endTime, Integer offset, Integer limit) {
-		Jedis redisService = jedisPool.getResource();
+		Jedis jedis = redisService.getJedis();
 		try {
 
 			Page<Map<String, Object>> pageResult = new Page<Map<String, Object>>();
 
 			String key = RedisKeyUtils.getPVKey();
 
-			Long total = redisService.zcount(key, 0,
+			Long total = jedis.zcount(key, 0,
 					DateUtil.parseStrToInt(new Date()));
 			pageResult.setTotalCount(total.intValue());
 			if (total <= 0) {
 				return pageResult;
 			}
 
-			Set<String> pages = redisService.zrange(key, offset, (offset+limit));
+			Set<String> pages = jedis.zrange(key, offset, (offset+limit));
 			if (pages == null || pages.isEmpty()) {
 				return pageResult;
 			}
@@ -204,15 +200,15 @@ public class StatisticServiceImpl implements StatisticService{
 				
 				String p = pg.split("\\?")[0];
 
-				Long count = redisService.zcount(RedisKeyUtils.getUVByUrl(p),
+				Long count = jedis.zcount(RedisKeyUtils.getUVByUrl(p),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_UV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getPVKey(p),
+				count = jedis.zcount(RedisKeyUtils.getPVKey(p),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_PV, count.intValue());
 
-				count = redisService.zcount(RedisKeyUtils.getIPByUrl(p),
+				count = jedis.zcount(RedisKeyUtils.getIPByUrl(p),
 						startTime, endTime);
 				data.put(Constant.STAT_POINT_IP, count.intValue());
 
@@ -222,10 +218,10 @@ public class StatisticServiceImpl implements StatisticService{
 			return pageResult;
 		} catch (Exception e) {
 			e.printStackTrace();
-			close(redisService);
+			redisService.close(jedis,true);
 			return null;
 		} finally {
-			close(redisService);
+			redisService.close(jedis,false);
 		}
 	}
 	
@@ -364,10 +360,15 @@ public class StatisticServiceImpl implements StatisticService{
 	
 	
 	private void close(Jedis jedis){
-		jedis.close();
+		
+        /*if(jedis!=null && jedisPool!=null)
+        	jedisPool.returnResource(jedis);*/
+        /*if(jedis!=null)
+        	jedis.close();
+        
         LOG.debug(" Is Jedis connected " +jedis.isConnected());
-        if(jedis.isConnected())
+        if(jedis!=null && jedis.isConnected())
             jedis.disconnect();
-        LOG.debug(" After disconnecting: is redis connected  " +jedis.isConnected());
+        LOG.debug(" After disconnecting: is redis connected  " +jedis.isConnected());*/
 	}
 }

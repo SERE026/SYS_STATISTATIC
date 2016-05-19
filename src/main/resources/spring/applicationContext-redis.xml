@@ -17,9 +17,9 @@
 	<!-- 连接池配置 -->
 	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
 		<!-- 最大连接数 -->
-		<property name="maxTotal" value="50" />
+		<property name="maxTotal" value="200" />
 		<!-- 最大空闲连接数 -->
-		<property name="maxIdle" value="10" />
+		<property name="maxIdle" value="50" />
 		<!-- 每次释放连接的最大数目 -->
 		<property name="numTestsPerEvictionRun" value="1024" />
 		<!-- 释放连接的扫描间隔（毫秒） -->
@@ -42,12 +42,16 @@
 	<bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="close">
 		<constructor-arg index="0" ref="jedisPoolConfig"></constructor-arg>
 		<!--注意：必须增加type属性，否则会报 Cannot open Redis connection due invalid URI. 192.168.1.222 -->
-		<constructor-arg index="1" type="java.lang.String"  value="192.168.1.222"></constructor-arg>
+		<constructor-arg index="1" type="java.lang.String"  value="e01fccbbea5c4a87.m.cnbja.kvstore.aliyuncs.com"></constructor-arg>
+		<!-- 
+		<constructor-arg index="1" type="java.lang.String" value="192.168.1.222"></constructor-arg>
+		 -->
 		<constructor-arg index="2" type="int" value="6379"></constructor-arg>
 		<!-- 超时时间 -->
 		<constructor-arg index="3" type="int" value="1500"></constructor-arg>
-		<!-- 密码 -->		
-		<constructor-arg index="4" type="java.lang.String"  value="foobared"></constructor-arg>
+		<!-- p -->		
+		<constructor-arg index="4" type="java.lang.String"  value="yinChEngmaLl1024g"></constructor-arg>
+		<!-- <constructor-arg index="4" type="java.lang.String"  value="foobared"></constructor-arg> -->
 	</bean>
 	
 	

@@ -1,8 +1,7 @@
 <%@ page language="java" import="java.util.*" pageEncoding="UTF-8" %>
 <%
 String path = request.getContextPath();
-String basePath = "http://"+request.getServerName()+":"+request.getServerPort()+path+"/";
-//String basePath = "https://"+request.getServerName() +path+"/";
+String basePath = "https://"+request.getServerName()+path+"/";
 %>
 <!DOCTYPE html>
 <html>
@@ -229,7 +228,7 @@ $('#table_os').bootstrapTable({
 function loadDate() {
 	var timeRange = $("#timeRange").val();
 	//浏览器
-	 var url1 = "<%=basePath%>stat/browserStat?timeRange="+timeRange;
+	 var url1 = "/stat/browserStat?timeRange="+timeRange;
 	 $.ajax({
 			url:url1,
 			dataType:'json',
@@ -248,7 +247,7 @@ function loadDate() {
 		});
 	 
 	//操作系统
-	var url2 =  "<%=basePath%>stat/osStat?timeRange="+timeRange;
+	var url2 =  "/stat/osStat?timeRange="+timeRange;
 	 $.ajax({
 			url:url2,
 			dataType:'json',
